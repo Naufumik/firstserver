@@ -1,0 +1,2 @@
+fn(State<Arc<std::sync::Mutex<Vec<Task>>>>) -> impl Future<Output = axum::Json<Vec<Task>>> {get_tasks}
+fn(State<Arc<std::sync::Mutex<Vec<Task>>>>) -> impl Future<Output = axum::Json<Vec<Task>>> {get_tasks}: Handler<_, _>
