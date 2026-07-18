@@ -1,2 +1,0 @@
-fn(State<AppState>, axum::Json<CreateTaskRequest>) -> impl Future<Output = Result<axum::Json<Task>, StatusCode>> {create_task}
-fn(State<AppState>, axum::Json<CreateTaskRequest>) -> impl Future<Output = Result<axum::Json<Task>, StatusCode>> {create_task}: Handler<_, _>
