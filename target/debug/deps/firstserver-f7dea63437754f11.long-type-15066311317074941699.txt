@@ -1,2 +1,0 @@
-fn(State<Arc<std::sync::Mutex<Vec<Task>>>>, Json<CreateTaskRequest>) -> impl Future<Output = Json<Task>> {create_task}
-fn(State<Arc<std::sync::Mutex<Vec<Task>>>>, Json<CreateTaskRequest>) -> impl Future<Output = Json<Task>> {create_task}: Handler<_, _>
