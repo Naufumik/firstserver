@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use axum::response::IntoResponse;
 use axum::routing::delete;
 use axum::{
-    extract::{Path, State},
+    extract::{Query, Path, State},
     http::StatusCode,
     routing::{get, post, put},
     Json, Router,
@@ -12,7 +12,8 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
 enum TaskStatus {
     Pending,
     InProgress,
@@ -33,6 +34,12 @@ struct Task {
 struct CreateTaskRequest {
     title: String,
     description: String,
+}
+
+#[derive(Deserialize)]
+struct SearchParams {
+    title: Option<String>,
+    status: Option<TaskStatus>,
 }
 
 #[derive(Deserialize)]
@@ -57,6 +64,7 @@ async fn main() {
     let app = Router::new()
         .route("/todos", get(get_tasks))
         .route("/todos", post(create_task))
+        .route("/todos/search", get(search_tasks))
         .route("/todos/{id}", get(get_task))
         .route("/todos/{id}", put(edit_task))
         .route("/todos/{id}", delete(delete_task))
@@ -93,6 +101,42 @@ async fn create_task(
 
     tasks.push(new_task.clone());
     Json(new_task)
+}
+
+
+async fn search_tasks(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<SearchParams>,
+) -> impl IntoResponse {
+    let tasks = state.tasks.lock().unwrap();
+
+    let found: Vec<Task> = tasks
+        .iter()
+        .filter(|t| {
+            let title_match = params.title.as_ref()
+                .map(|search| t.title.to_lowercase().contains(&search.to_lowercase()))
+                .unwrap_or(true);
+            
+            let status_match = params.status.as_ref()
+                .map(|s| &t.status == s)
+                .unwrap_or(true);
+            
+            title_match && status_match
+        })
+        .cloned()
+        .collect();
+
+    if found.is_empty() {
+        (
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "error": "Not found",
+                "message": "Задачи по заданным критериям не найдены"
+            }))
+        ).into_response()
+    } else {
+        (StatusCode::OK, Json(found)).into_response()
+    }
 }
 
 
