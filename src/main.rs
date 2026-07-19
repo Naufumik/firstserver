@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 use axum::response::IntoResponse;
+use axum::routing::delete;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -50,6 +51,7 @@ async fn main() {
         .route("/todos", get(get_tasks))
         .route("/todos", post(create_task))
         .route("/todos/{id}", get(get_task))
+        .route("/todos/{id}", delete(delete_task))
         .with_state(shared_state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -103,4 +105,30 @@ async fn create_task(
 
     tasks.push(new_task.clone());
     Json(new_task)
+}
+
+
+async fn delete_task(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<i32>,
+) -> impl IntoResponse{
+    let mut tasks = state.tasks.lock().unwrap();
+
+    match tasks.iter().position(|t| t.id == id) {
+        Some(index) => {
+            let task = tasks.remove(index);
+            (StatusCode::OK, Json(json!({
+                    "message": format!("Задача \"{}\" успешно удалена", task.title)
+                }))
+            ).into_response()},
+        None => {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "Task not found",
+                    "message": format!("Задачи с ID:{} не существует",id)
+                }))
+            ).into_response()
+        }
+    }
 }
