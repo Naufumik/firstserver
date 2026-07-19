@@ -1,2 +1,0 @@
-fn(State<AppState>, Json<CreateTaskRequest>) -> impl Future<Output = Result<Json<Task>, StatusCode>> {create_task}
-fn(State<AppState>, Json<CreateTaskRequest>) -> impl Future<Output = Result<Json<Task>, StatusCode>> {create_task}: Handler<_, _>

@@ -1,2 +1,0 @@
-fn(State<Arc<AppState>>, axum::extract::Path<i32>) -> impl Future<Output = {type error}> {get_task}
-fn(State<Arc<AppState>>, axum::extract::Path<i32>) -> impl Future<Output = {type error}> {get_task}: Handler<_, _>
