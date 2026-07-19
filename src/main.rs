@@ -6,7 +6,7 @@ use axum::routing::delete;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    routing::{get, post},
+    routing::{get, post, put},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
@@ -35,6 +35,13 @@ struct CreateTaskRequest {
     description: String,
 }
 
+#[derive(Deserialize)]
+struct UpdateTaskRequest {
+    title: String,
+    description: String,
+    status: TaskStatus,
+}
+
 struct AppState {
     tasks: Mutex<Vec<Task>>,
     next_id: AtomicI32,
@@ -51,6 +58,7 @@ async fn main() {
         .route("/todos", get(get_tasks))
         .route("/todos", post(create_task))
         .route("/todos/{id}", get(get_task))
+        .route("/todos/{id}", put(edit_task))
         .route("/todos/{id}", delete(delete_task))
         .with_state(shared_state);
 
@@ -63,26 +71,6 @@ async fn get_tasks(State(state): State<Arc<AppState>>) -> Json<Vec<Task>> {
     Json(tasks.clone())
 }
 
-async fn get_task(
-    State(state): State<Arc<AppState>>,
-    Path(id): Path<i32>,
-) -> impl IntoResponse{
-    let tasks = state.tasks.lock().unwrap();
-
-    match tasks.iter().find(|t| t.id == id) {
-        Some(task) => {
-            (StatusCode::OK, Json(task.clone()) ).into_response()},
-        None => {
-            (
-                StatusCode::NOT_FOUND,
-                Json(json!({
-                    "error": "Task not found",
-                    "message": format!("Задачи с ID:{} не существует",id)
-                }))
-            ).into_response()
-        }
-    }
-}
 
 async fn create_task(
     State(state): State<Arc<AppState>>,
@@ -105,6 +93,61 @@ async fn create_task(
 
     tasks.push(new_task.clone());
     Json(new_task)
+}
+
+
+async fn get_task(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<i32>,
+) -> impl IntoResponse{
+    let tasks = state.tasks.lock().unwrap();
+
+    match tasks.iter().find(|t| t.id == id) {
+        Some(task) => {
+            (StatusCode::OK, Json(task.clone()) ).into_response()},
+        None => {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "Task not found",
+                    "message": format!("Задачи с ID:{} не существует",id)
+                }))
+            ).into_response()
+        }
+    }
+}
+
+
+async fn edit_task(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<i32>,
+    Json(payload): Json<UpdateTaskRequest>,
+) -> impl IntoResponse{
+    let mut tasks = state.tasks.lock().unwrap();
+
+    match tasks.iter_mut().find(|t| t.id == id) {
+        Some(task) => {
+            task.title = payload.title;
+            task.description = payload.description;
+            task.status = payload.status;
+            task.updated_at = Some(
+                SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+            );
+            (StatusCode::OK, Json(task.clone())).into_response()
+        },
+        None => {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "Task not found",
+                    "message": format!("Задачи с ID:{} не существует",id)
+                }))
+            ).into_response()
+        }
+    }
 }
 
 
