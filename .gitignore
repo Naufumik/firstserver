@@ -1,11 +1,18 @@
-   # Rust
-   /target/
-   Cargo.lock
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
 
-   # IDE
-   .vscode/
-   .idea/
-   
-   # OS
-   .DS_Store
-   Thumbs.db
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+.log
