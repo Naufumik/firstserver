@@ -1,17 +1,12 @@
-use std::sync::atomic::AtomicI32;
-use parking_lot::RwLock;
-use crate::models::task::Task;
+use sqlx::PgPool;
 
 pub struct AppState {
-    pub tasks: RwLock<Vec<Task>>,
-    pub next_id: AtomicI32,
+    pub db: PgPool,
 }
 
 impl AppState {
-    pub fn new() -> Self {
-        Self {
-            tasks: RwLock::new(Vec::new()),
-            next_id: AtomicI32::new(1),
-        }
+    pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
+        let db = PgPool::connect(database_url).await?;
+        Ok(Self { db })
     }
 }

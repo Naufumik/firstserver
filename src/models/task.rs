@@ -1,15 +1,16 @@
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use chrono::{DateTime, Utc};
 
-#[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, sqlx::Type)]
+#[sqlx(type_name = "TEXT", rename_all = "snake_case")]
 pub enum TaskStatus {
     Pending,
     InProgress,
     Done,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct Task {
     pub id: i32,
     pub title: String,
